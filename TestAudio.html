@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<head>
+  <style>
+  video { transform: scaleX(-1); }
+  p { text-align: center; }
+  </style>
+</head>
+<body>
+<article>    	
+ <h1>Snapshot Kiosk</h1>
+ <section id="app" >
+  <p><input type=button value="&#x1F4F7;" onclick="snapshot()"></p>
+  <p>
+  <audio id ="longAudio" src="long.ogg" controls="controls">Your browser does not support the audio element.</audio>
+  <audio id ="testAudio" src="h.ogg" controls="controls"></audio>
+  </p>
+ </section>
+ <script>
+  var longAudio = document.getElementById('longAudio');
+  var testAudio = document.getElementById('testAudio');
+  
+  function audioplay()
+  {
+	testAudio.play();
+  }
+  
+  function snapshot() {
+	// setTimeout('audioplay()',1);
+	// longAudio.play();	
+	var currTime = (new Date()).getTime();
+	while((new Date()).getTime() - currTime < 3000)
+	{
+		while((new Date()).getTime() - currTime > 1000)
+		{
+			testAudio.play();
+		}
+	}
+	
+	// testAudio.play();
+	
+	// console.log(longAudio.paused);
+	// longAudio.pause();
+	// console.log(longAudio.paused);
+	
+  }
+    
+ </script>
+</article>
+</body>

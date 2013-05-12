@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<head>
+  <style>
+  video { transform: scaleX(-1); }
+  p { text-align: center; }
+  </style>
+</head>
+<body>
+<article>    	
+ <h1>Snapshot Kiosk</h1>
+ <section id="splash">
+  <p id="errorMessage">Loading...</p>
+ </section>
+ <section id="app" >
+  <p><video id="monitor" autoplay hidden></video> 
+ </section>
+ <script>
+  navigator.webkitGetUserMedia({video:true}, gotStream, noStream);
+  var video = document.getElementById('monitor');
+
+  function gotStream(stream) {
+	var videoDevice = stream.videoTracks[0];
+	// Check if this device supports a picture mode...
+	var pictureDevice = videoDevice.pictureDeviceTrack;
+	if (pictureDevice) 
+	{
+		pictureDevice.onpicture = showPicture;
+		if (pictureDevice.redEyeReduction) 
+		{
+			pictureDevice.redEyeReduction.request(true,true);
+		}
+		else
+		{
+			console.log('No red eye reduction');
+		}
+		
+		pictureDevice.takePicture();
+	}
+  }
+  
+  function showPicture(e) {
+	video.src = URL.createObjectURL(e.data);
+  }
+  
+  function noStream() {
+    document.getElementById('errorMessage').textContent = 'No camera available.';
+  }
+  
+ </script>
+</article>
+
+</body>

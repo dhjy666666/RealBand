@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<head>
+	<style>
+		video { transform: scaleX(-1); }
+		p { text-align: center; font-size:14px; }
+	</style>
+</head>
+<body>
+	<p>
+		<video id="monitor" style="width:320px;height:240px;" autoplay hidden></video> 
+		<canvas id="photo"></canvas>
+	</p>
+
+	<p id="testOut">
+	</p>
+	
+	<p>
+		<audio id ="testvideo" src="h.ogg" controls="controls">Your browser does not support the audio element.</audio>
+		<audio id ="testvideo2" src="124.ogg" controls="controls"></audio>
+	</p>
+	
+	<p>
+		<div>
+			<div id="textpleft" style="float:left; width:450px; font-size:14px;">
+			</div>
+			<div id="textpleft2" style="float:left; width:450px; font-size:14px;">
+			</div>
+		</div>
+	</p>
+	
+	<p id="textp">
+	</p>
+	
+	<script>
+	
+		var constraints = {
+			video: {
+				mandatory: {
+					
+				},
+				optional:[
+					{frameRate:1},
+					{facingMode:"environment"}
+				]
+			}
+		};
+		
+		var isMobile = true;
+		function getIsMobile() {  //判断是不是移动端
+			var userAgent = navigator.userAgent.toLowerCase();
+			isMobile = /mobile/.test(userAgent);
+		}
+		getIsMobile();
+		
+		navigator.webkitGetUserMedia(constraints, gotStream, noStream);
+		var video = document.getElementById('monitor');
+		var canvas = document.getElementById('photo');
+		var audio = document.getElementById('testvideo');
+		var audio2 = document.getElementById('testvideo2');
+
+		var pleft = new Array();
+		pleft[0] = document.getElementById('textpleft');
+		pleft[1] = document.getElementById('textpleft2');
+		var ptext = document.getElementById('textp');
+		var testOut = document.getElementById('testOut');
+		
+		var pArr = new Array();
+		for(var k=0; k<2; k++) {
+			pArr[k] = new Array();
+			pArr[k]['phlast'] = 0;
+			pArr[k]['pslast'] = 0;
+			pArr[k]['pvlast'] = 0;
+			pArr[k]['phcurr'] = 0;
+			pArr[k]['pscurr'] = 0;
+			pArr[k]['pvcurr'] = 0;
+		}
+
+		var context = canvas.getContext('2d'); 
+
+		function gotStream(stream) {
+			video.src = URL.createObjectURL(stream);
+			video.onerror = function () {
+				stream.stop();
+			};
+			stream.onended = noStream;
+			video.onloadeddata = function () {
+				console.log("get data");
+			};
+			canvas.width = 640;
+			canvas.height = 480;
+			canvas.style.width = "320px";
+			canvas.style.height = "240px";	  
+		}
+
+		function noStream() {
+			document.getElementById('errorMessage').textContent = 'No camera available.';
+		}
+
+		// 水平翻转画布
+		function turnCanvas(ctx, canvas_width) {
+			ctx.translate(canvas_width, 0);
+			ctx.scale(-1, 1);
+		}
+		
+		// 颜色空间转换
+		function pixel_rgb2hsv(r, g, b) {
+			var s,h,v;
+			var min=Math.min(r, g, b);
+			var max=Math.max(r, g, b);
+			var degree=max-min;
+			v=max;
+			if (max!=0){
+				s=degree;
+			}else{
+				s=0;
+				h=0;
+			}
+			if(r==max){
+				h=g-b;
+			}else if(g==max){
+				h=b-r+80;
+			}else{
+				h=r-g+160;
+			}
+			if (h<0){
+				h+=240;
+			}
+			return [h, s, v];
+		}
+
+		// 整块图像进行颜色空间转换
+		function rgb2hsv(rgbArr) {
+			var hsvArr = new Array();
+			for(var i=0;i<rgbArr.length;i+=4) {
+				hsvArr[i/4] = pixel_rgb2hsv(rgbArr[i], rgbArr[i+1], rgbArr[i+2]);
+			}
+			return hsvArr;
+		}
+		
+		// 音频发声
+		function playAudio(k) {
+			if(k==0){
+				if(audio.currentTime > 0.4){
+					audio.stop();
+				}
+				audio.play();
+			}else{
+				if(audio2.currentTime > 0.4){
+					audio2.stop();
+				}
+				audio2.play();
+			}
+		}
+		
+		var t = (new Date()).getTime();  //debug
+		
+		var startTime = (new Date()).getTime();
+		var frameRate = 0;
+		
+		function snapshot() {
+			var currTime = (new Date()).getTime();
+			// if(currTime-startTime < 1000)
+			// {
+				// frameRate++;
+				// testOut.innerHTML = frameRate;
+			// }
+			
+			var tt = (new Date()).getTime();  //debug
+			if (ptext.innerHTML.length>400) ptext.innerHTML='';
+			ptext.innerHTML += ' '+(tt-t);  //debug
+			t = tt;  //debug
+			
+			if(!isMobile) turnCanvas(context, canvas.width);// 水平翻转画布
+			context.drawImage(video, 0, 0);
+			if(!isMobile) turnCanvas(context, canvas.width);// 水平翻转画布
+			
+			tt = (new Date()).getTime();  //debug
+			ptext.innerHTML += '('+(tt-t);  //debug
+
+			var pos = [[150, 400], [450, 400]];
+			var img = new Array();
+			var pix = new Array();
+
+			for(var k=0; k<2; k++) {
+				pArr[k]['phlast'] = pArr[k]['phcurr'];
+				pArr[k]['pslast'] = pArr[k]['pscurr'];
+				pArr[k]['pvlast'] = pArr[k]['pvcurr'];
+				pArr[k]['phcurr'] = 0;
+				pArr[k]['pscurr'] = 0;
+				pArr[k]['pvcurr'] = 0;
+
+				img[k] = context.getImageData(pos[k][0],pos[k][1],30,30);
+				pix[k] = img[k].data;
+
+				//颜色处理
+				for(var i=0,n=pix[k].length;i<n;i+=4){
+					pix[k][i] = 255-pix[k][i]; //红
+					pix[k][i+1] = 255-pix[k][i+1]; //绿
+					pix[k][i+2] = 255-pix[k][i+2]; //蓝
+				}
+
+				context.putImageData(img[k],pos[k][0],pos[k][1]);
+
+			tt = (new Date()).getTime();  //debug
+			ptext.innerHTML += ','+(tt-t);  //debug
+				
+				//输出
+				pleft[k].innerHTML = '';
+
+				hsv = rgb2hsv(pix[k]);
+				var ph=0,ps=0,pv=0;	
+
+				for(var i=0;i<6;i++){
+					pleft[k].innerHTML += '<br>';
+
+					for (var j=0; j<6; j++){
+						ph =0;
+						ps =0;
+						pv =0;
+						for (var ii=0;ii<5;ii++){
+							for (var jj=0;jj<5;jj++){
+								ph +=hsv[i*30*5+j*5+ii*30+jj][0];
+								ps +=hsv[i*30*5+j*5+ii*30+jj][1];
+								pv +=hsv[i*30*5+j*5+ii*30+jj][2];
+							}	
+						}
+						ph =parseInt(ph/25);
+						ps =parseInt(ps/25);
+						pv =parseInt(pv/25);
+						pArr[k]['phcurr'] += ph;
+						pArr[k]['pscurr'] += ps;
+						pArr[k]['pvcurr'] += pv;
+
+						pleft[k].innerHTML += ph + '|' + ps + '|' + pv + ' ';
+					}
+				}
+
+				// var rate=0.1;
+				pArr[k]['phcurr'] = (pArr[k]['phcurr']/36).toFixed(2);
+				pArr[k]['pscurr'] = (pArr[k]['pscurr']/36).toFixed(2);
+				pArr[k]['pvcurr'] = (pArr[k]['pvcurr']/36).toFixed(2);
+				if(Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']) > 30){
+					ptext.innerHTML += '<br>H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']);
+					console.log(k + 'H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']));
+					playAudio(k);
+				}else if(Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']) > 12){
+					ptext.innerHTML += '<br>S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']);
+					console.log(k + 'S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']));
+					playAudio(k);
+				}else if(Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']) > 200){
+					ptext.innerHTML += '<br>V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']);
+					console.log(k + 'V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']));
+					playAudio(k);
+				}
+				
+				
+			tt = (new Date()).getTime();  //debug
+			ptext.innerHTML += ','+(tt-t);  //debug
+				
+			}
+
+			ptext.innerHTML += ')';  //debug
+			setTimeout('snapshot()',1);
+		}
+		
+		HTMLAudioElement.prototype.stop = function() { 
+			this.pause(); 
+			this.currentTime = 0.0; 
+		} 
+		
+		snapshot();
+	</script>
+</body>

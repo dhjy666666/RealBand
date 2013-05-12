@@ -2,7 +2,4 @@ RealBand
 ========
 
 A Project about Making Band More Real Using HTML5 On the Internet
-Test git add for stage
-Test git add for two stage
-Test git diff
-Test git -a -m 
+这是一个关于使用HTML5技术在移动端实现现实增强技术下的虚拟乐器的项目

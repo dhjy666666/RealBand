@@ -26,19 +26,19 @@
   
   function snapshot() {
 	// setTimeout('audioplay()',1);
-	// longAudio.play();	
+	longAudio.play();	
 	var currTime = (new Date()).getTime();
 	while((new Date()).getTime() - currTime < 3000)
 	{
 		while((new Date()).getTime() - currTime > 1000)
 		{
-			testAudio.play();
+			// testAudio.play();
 		}
 	}
 	
-	// testAudio.play();
+	testAudio.play();
 	
-	// console.log(longAudio.paused);
+	console.log(longAudio.paused);
 	// longAudio.pause();
 	// console.log(longAudio.paused);
 	

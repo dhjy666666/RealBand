@@ -7,25 +7,19 @@
 </head>
 <body>
 <article>    	
- <h1>Snapshot Kiosk</h1>
+ <p>1.测试两个Audio能否同时发音</p>
  <section id="app" >
-  <p><input type=button value="&#x1F4F7;" onclick="snapshot()"></p>
+  <p><input type=button value="&#x1F4F7;" onclick="TestTwoAudioCanPlayOnSameTime()"></p>
   <p>
-  <audio id ="longAudio" src="long.ogg" controls="controls">Your browser does not support the audio element.</audio>
-  <audio id ="testAudio" src="h.ogg" controls="controls"></audio>
+  <audio id ="longAudio" src="../sound/long.ogg" controls="controls">Your browser does not support the audio element.</audio>
+  <audio id ="testAudio" src="../sound/h.ogg" controls="controls"></audio>
   </p>
  </section>
  <script>
   var longAudio = document.getElementById('longAudio');
   var testAudio = document.getElementById('testAudio');
   
-  function audioplay()
-  {
-	testAudio.play();
-  }
-  
-  function snapshot() {
-	// setTimeout('audioplay()',1);
+  function TestTwoAudioCanPlayOnSameTime() {
 	longAudio.play();	
 	
 	var currTime = (new Date()).getTime();
@@ -35,11 +29,8 @@
 	}
 	
 	testAudio.play();
-	
 	// console.log(longAudio.paused);
-	// longAudio.pause();
-	// console.log(longAudio.paused);
-	
+
   }
     
  </script>

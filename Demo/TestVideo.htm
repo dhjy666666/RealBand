@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<head>
+	<style>
+    #video_stream {
+      width: 400px;
+      border: 8px inset silver;
+    }
+	#video_box {
+      text-align: center;
+      margin-top: 50px;
+    }
+	#demo_area {
+	  margin-top: 20px;
+	  text-align: center;
+	}
+	</style>
+</head>
+<body>
+	<div id="demo_area">
+		<button id="launch_button" value="&#x1F4F7;" onclick="OpenTheCamera()">打开我的摄像头</button>
+	</div>
+	<div id="video_box">
+		<video id="video_stream" autoplay></video>
+	</div>
+	
+	<p id='showSnapTime'></p>
+
+	<script>		
+		
+		var video = document.getElementById('video_stream');
+		var pSnapTime = document.getElementById('showSnapTime'); 
+
+		function OpenTheCamera()
+		{
+			navigator.webkitGetUserMedia({video:true}, gotStream, noStream);
+			TestAudioFrameTime();
+		}
+		
+		function gotStream(stream) {
+			video.src = URL.createObjectURL(stream);
+			
+			video.onerror = function () {
+				stream.stop();
+			};
+			
+			stream.onended = noStream;
+			
+			video.onloadeddata = function () {
+				console.log("get data");
+			};
+		}
+
+		function noStream() {
+			console.log('No camera available.');
+		}
+		
+		var lastTime;
+		
+		function TestAudioFrameTime() {
+			var currTime = (new Date()).getTime();
+			
+			console.log(currTime-lastTime);
+			pSnapTime.innerHTML = currTime-lastTime;
+			lastTime = currTime;
+			
+			while((new Date()).getTime() - currTime < 200)
+			{
+
+			}
+			
+			setTimeout('TestAudioFrameTime()',1);
+		}		
+	
+	</script>
+</body>

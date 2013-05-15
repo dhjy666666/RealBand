@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<head>
+	<style>
+    #video_stream {
+      width: 400px;
+      border: 8px inset silver;
+    }
+	#video_box {
+      text-align: center;
+      margin-top: 50px;
+    }
+	#demo_area {
+	  margin-top: 20px;
+	  text-align: center;
+	}
+	</style>
+</head>
+<body>
+	<div id="demo_area">
+		<button id="launch_button" value="&#x1F4F7;" onclick="OpenTheCamera()">打开我的摄像头</button>
+	</div>
+	<div id="video_box">
+		<video id="video_stream" autoplay></video>
+		<canvas id="photo"></canvas>
+	</div>
+	
+	<p id='showSnapTime'></p>
+
+	<script>		
+		
+		var video = document.getElementById('video_stream');
+		var canvas = document.getElementById('photo');
+		var context = canvas.getContext('2d');
+				
+		var pSnapTime = document.getElementById('showSnapTime'); 
+		
+
+		function OpenTheCamera()
+		{
+			navigator.webkitGetUserMedia({video:true}, gotStream, noStream);
+			TestCanvasTime();
+		}
+		
+		function gotStream(stream) {
+			video.src = URL.createObjectURL(stream);
+			
+			video.onerror = function () {
+				stream.stop();
+			};
+			
+			stream.onended = noStream;
+			
+			video.onloadeddata = function () {
+				console.log("get data");
+			};
+			canvas.width = 640;
+			canvas.height = 480;
+			canvas.style.width = "400px";
+			canvas.style.height = "300px";	
+		}
+
+		function noStream() {
+			console.log('No camera available.');
+		}
+  
+		function TestCanvasTime() {
+			var currTimeBeforeDrawImage = (new Date()).getTime();
+			
+			context.drawImage(video, 0, 0);
+			
+			var currTimeBeforeGetImageData = (new Date()).getTime();
+			
+			pSnapTime.innerHTML = "drawImage Time:" + (currTimeBeforeGetImageData-currTimeBeforeDrawImage);
+			
+			var img = context.getImageData(150,400,30,30);
+
+			var currTimeBeforeImgData = (new Date()).getTime();
+			
+			pSnapTime.innerHTML += ", getImageData Time:" + (currTimeBeforeImgData-currTimeBeforeGetImageData);
+			
+			var pix = img.data;
+			
+			var currTimeBeforePixTurn = (new Date()).getTime();
+			
+			pSnapTime.innerHTML += ", Img.Data Time:" + (currTimeBeforePixTurn-currTimeBeforeImgData);
+			
+			//反色处理
+			for(var i=0,n=pix.length;i<n;i+=4)
+			{
+				pix[i] = 255 - pix[i]; //红
+				pix[i+1] = 255-pix[i+1]; //绿
+				pix[i+2] = 255-pix[i+2]; //蓝
+			}
+			
+			var currTimeBeforePutImageData = (new Date()).getTime();
+			
+			pSnapTime.innerHTML += ", PixTurn Time:" + 	(currTimeBeforePutImageData-currTimeBeforePixTurn);
+			
+			context.putImageData(img,150,400);
+			
+			var currTimeBeforeSetTimeOut = (new Date()).getTime();
+			
+			pSnapTime.innerHTML += ", PutImageData Time:" + (currTimeBeforeSetTimeOut-currTimeBeforePutImageData);
+			
+			var currTime = (new Date()).getTime();
+			while((new Date()).getTime() - currTime < 200)
+			{
+			
+			}
+			
+			setTimeout('TestCanvasTime()',1);
+		}
+ </script>
+</article>
+
+</body>

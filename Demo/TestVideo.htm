@@ -33,7 +33,7 @@
 		function OpenTheCamera()
 		{
 			navigator.webkitGetUserMedia({video:true}, gotStream, noStream);
-			TestAudioFrameTime();
+			TestVideoFrameSnapTime();
 		}
 		
 		function gotStream(stream) {
@@ -56,19 +56,19 @@
 		
 		var lastTime;
 		
-		function TestAudioFrameTime() {
+		function TestVideoFrameSnapTime() {
 			var currTime = (new Date()).getTime();
 			
 			console.log(currTime-lastTime);
 			pSnapTime.innerHTML = currTime-lastTime;
-			lastTime = currTime;
 			
 			while((new Date()).getTime() - currTime < 200)
 			{
 
 			}
 			
-			setTimeout('TestAudioFrameTime()',1);
+			setTimeout('TestVideoFrameSnapTime()',1);
+			lastTime = (new Date()).getTime();
 		}		
 	
 	</script>

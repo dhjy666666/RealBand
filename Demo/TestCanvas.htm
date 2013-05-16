@@ -15,13 +15,13 @@
 	}
 	</style>
 </head>
-<body>
+<body style="text-align:center">
 	<div id="demo_area">
 		<button id="launch_button" value="&#x1F4F7;" onclick="OpenTheCamera()">打开我的摄像头</button>
 	</div>
 	<div id="video_box">
 		<video id="video_stream" autoplay></video>
-		<canvas id="photo"></canvas>
+		<canvas id="photo" hidden></canvas>
 	</div>
 	
 	<p id='showSnapTime'></p>
@@ -62,27 +62,31 @@
 		function noStream() {
 			console.log('No camera available.');
 		}
-  
+
+		var lastTime;
+		
 		function TestCanvasTime() {
 			var currTimeBeforeDrawImage = (new Date()).getTime();
+			
+			pSnapTime.innerHTML = "CanvasSnap Time:" + (currTimeBeforeDrawImage-lastTime);
 			
 			context.drawImage(video, 0, 0);
 			
 			var currTimeBeforeGetImageData = (new Date()).getTime();
 			
-			pSnapTime.innerHTML = "drawImage Time:" + (currTimeBeforeGetImageData-currTimeBeforeDrawImage);
+			pSnapTime.innerHTML += "<br> drawImage Time:" + (currTimeBeforeGetImageData-currTimeBeforeDrawImage);
 			
 			var img = context.getImageData(150,400,30,30);
 
 			var currTimeBeforeImgData = (new Date()).getTime();
 			
-			pSnapTime.innerHTML += ", getImageData Time:" + (currTimeBeforeImgData-currTimeBeforeGetImageData);
+			pSnapTime.innerHTML += "<br> getImageData Time:" + (currTimeBeforeImgData-currTimeBeforeGetImageData);
 			
 			var pix = img.data;
 			
 			var currTimeBeforePixTurn = (new Date()).getTime();
 			
-			pSnapTime.innerHTML += ", Img.Data Time:" + (currTimeBeforePixTurn-currTimeBeforeImgData);
+			pSnapTime.innerHTML += "<br> Img.Data Time:" + (currTimeBeforePixTurn-currTimeBeforeImgData);
 			
 			//反色处理
 			for(var i=0,n=pix.length;i<n;i+=4)
@@ -94,23 +98,19 @@
 			
 			var currTimeBeforePutImageData = (new Date()).getTime();
 			
-			pSnapTime.innerHTML += ", PixTurn Time:" + 	(currTimeBeforePutImageData-currTimeBeforePixTurn);
+			pSnapTime.innerHTML += "<br> PixTurn Time:" + 	(currTimeBeforePutImageData-currTimeBeforePixTurn);
 			
 			context.putImageData(img,150,400);
 			
 			var currTimeBeforeSetTimeOut = (new Date()).getTime();
 			
-			pSnapTime.innerHTML += ", PutImageData Time:" + (currTimeBeforeSetTimeOut-currTimeBeforePutImageData);
+			pSnapTime.innerHTML += "<br> PutImageData Time:" + (currTimeBeforeSetTimeOut-currTimeBeforePutImageData);
 			
-			var currTime = (new Date()).getTime();
-			while((new Date()).getTime() - currTime < 200)
-			{
-			
-			}
+			lastTime = currTimeBeforeSetTimeOut;
 			
 			setTimeout('TestCanvasTime()',1);
 		}
- </script>
+	</script>
 </article>
 
 </body>

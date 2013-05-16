@@ -1,81 +1,219 @@
 <!DOCTYPE html>
 <head>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+
 	<style>
 		video { transform: scaleX(-1); }
-		p { text-align: center; font-size:14px; }
+		div { text-align: center; font-size:14px; }
+		.textInfo {float:left; width:480px; font-size:14px;}
+		audio {width:45px; height:20px;}
 	</style>
 </head>
 <body>
-	<p>
-		<video id="monitor" style="width:320px;height:240px;" autoplay hidden></video> 
-		<canvas id="photo"></canvas>
-	</p>
-
-	<p id="testOut">
-	</p>
-	
-	<p>
-		<audio id ="testvideo" src="h.ogg" controls="controls">Your browser does not support the audio element.</audio>
-		<audio id ="testvideo2" src="124.ogg" controls="controls"></audio>
-	</p>
-	
-	<p>
-		<div>
-			<div id="textpleft" style="float:left; width:450px; font-size:14px;">
-			</div>
-			<div id="textpleft2" style="float:left; width:450px; font-size:14px;">
-			</div>
-		</div>
-	</p>
-	
-	<p id="textp">
-	</p>
+	<div style="width:320px;height:140px;overflow:hidden;border:1px solid;">
+		<video id="monitorVideo" style="width:320px;height:240px;position:relative;top:-100px;" autoplay ></video>
+		<canvas id="artCanvas" width="640" height="480" style="width:320px;height:240px;position:relative;top:-343px;"></canvas>
+		<canvas id="workCanvas"style="width:320px;height:240px;"hidden></canvas>
+	</div>
+	<input type="button" onclick="playAudio(0)" style="width:50px;height:50px;" value="0"/>
+	<input type="button" onclick="playAudio(1)" style="width:50px;height:50px;" value="1"/>
+	<input type="button" onclick="playAudio(2)" style="width:50px;height:50px;" value="2"/>
+	<input type="button" onclick="playAudio(3)" style="width:50px;height:50px;" value="3"/>
+	<div id="audioDiv"><audio id ="audioDrum" preload="auto" src="sound/drum.mp3" controls="controls"></audio></div>
+	<div id="textDiv"></div>
+	<div id="textp"></div>
 	
 	<script>
-	
-		var constraints = {
-			video: {
-				mandatory: {
-					
-				},
-				optional:[
-					{frameRate:1},
-					{facingMode:"environment"}
-				]
-			}
-		};
-		
-		var isMobile = true;
 		function getIsMobile() {  //判断是不是移动端
 			var userAgent = navigator.userAgent.toLowerCase();
-			isMobile = /mobile/.test(userAgent);
+			return /mobile/.test(userAgent);
 		}
-		getIsMobile();
+		var isMobile = getIsMobile();
 		
-		navigator.webkitGetUserMedia(constraints, gotStream, noStream);
-		var video = document.getElementById('monitor');
-		var canvas = document.getElementById('photo');
-		var audio = document.getElementById('testvideo');
-		var audio2 = document.getElementById('testvideo2');
-
-		var pleft = new Array();
-		pleft[0] = document.getElementById('textpleft');
-		pleft[1] = document.getElementById('textpleft2');
+		var hMax = 30, sMax = 12, vMax = 200;
+		
+		var pos = [[25, 370, 30, 30], [200, 400, 30, 30], [430, 400, 30, 30], [585, 370, 30, 30]];
+		var cnt = pos.length;
+		
+		navigator.webkitGetUserMedia({video:true}, gotStream, noStream);
+		var video = document.getElementById('monitorVideo');
+		var wCanvas = document.getElementById('workCanvas');
+		var aCanvas = document.getElementById('artCanvas');
+		var context = wCanvas.getContext('2d');
+		
+		// var audioArr = new Array();
+		var textArr = new Array();
+		
 		var ptext = document.getElementById('textp');
-		var testOut = document.getElementById('testOut');
-		
 		var pArr = new Array();
-		for(var k=0; k<2; k++) {
-			pArr[k] = new Array();
-			pArr[k]['phlast'] = 0;
-			pArr[k]['pslast'] = 0;
-			pArr[k]['pvlast'] = 0;
-			pArr[k]['phcurr'] = 0;
-			pArr[k]['pscurr'] = 0;
-			pArr[k]['pvcurr'] = 0;
-		}
 
-		var context = canvas.getContext('2d'); 
+		var audio = document.getElementById('audioDrum');
+		var audioPointTime = [[0, 0.17], [1, 0.17], [2, 0.7], [3, 5.37]];
+		var audioEndTime = 0;
+		
+		function init() {
+			// 水平翻转视频(PC摄像头不对称)
+			if(!isMobile) {
+				video.style.WebkitTransform="translate(320px,0)";
+				video.style.WebkitTransform="scale(-1,1)";
+			}
+			
+			var audioDiv = document.getElementById('audioDiv');
+			var textDiv = document.getElementById('textDiv');
+			var aCtx = aCanvas.getContext('2d');
+			
+			aCtx.globalAlpha = 0.4;
+			for(var k=0; k<cnt; k++){
+				// var audio = document.createElement("audio");
+				// if (audio != null && audio.canPlayType && audio.canPlayType("audio/mpeg"))
+				// {
+					// audio.src = "audio/sample.mp3";
+					// audio.play();
+				// }
+				// audioArr[k] = document.getElementById('audio' + k);
+				textDiv.innerHTML += '<div id="text' + k + '" class="textInfo" style="float:left; width:480px; font-size:14px;"></div>';
+				// textArr[k] = document.getElementById('text' + k);  //可以直接生成node 在加入textDiv 就没有bug了
+				
+				var p = [];
+				p['phlast'] = 0;
+				p['pslast'] = 0;
+				p['pvlast'] = 0;
+				p['phcurr'] = 0;
+				p['pscurr'] = 0;
+				p['pvcurr'] = 0;
+				pArr.push(p);
+				// pArr[k] = new Array();
+				// pArr[k]['phlast'] = 0;
+				// pArr[k]['pslast'] = 0;
+				// pArr[k]['pvlast'] = 0;
+				// pArr[k]['phcurr'] = 0;
+				// pArr[k]['pscurr'] = 0;
+				// pArr[k]['pvcurr'] = 0;
+
+				//artCanvas标记位置
+				aCtx.fillStyle="#FD0";
+				aCtx.fillRect(pos[k][0],pos[k][1],pos[k][2],pos[k][3]);
+			}
+		}
+		init();
+		
+		
+		var t = (new Date()).getTime();  //debug
+		function snapshot() {
+			var tt = (new Date()).getTime();  //debug
+			ptext.innerHTML += (tt-t) + ' ';  //debug
+			if (ptext.innerHTML.length>800) ptext.innerHTML='';
+			t = tt;  //debug
+			checkPauseAudio();  //判断audio是否暂停
+			
+			if(!isMobile) turnCanvas(context, wCanvas.width);// 水平翻转画布(PC摄像头不对称)
+			context.drawImage(video, 0, 0);
+			if(!isMobile) turnCanvas(context, wCanvas.width);// 水平翻转画布(PC摄像头不对称)
+			
+			checkPauseAudio();  //判断audio是否暂停
+
+			var img = new Array();
+			var pix = new Array();
+			
+			tt2 = (new Date()).getTime();  //debug
+			ptext.innerHTML += '('+(tt2-tt);  //debug
+			tt = tt2;  //debug
+
+			for(var k=0; k<cnt; k++) {
+				pArr[k]['phlast'] = pArr[k]['phcurr'];
+				pArr[k]['pslast'] = pArr[k]['pscurr'];
+				pArr[k]['pvlast'] = pArr[k]['pvcurr'];
+				pArr[k]['phcurr'] = 0;
+				pArr[k]['pscurr'] = 0;
+				pArr[k]['pvcurr'] = 0;
+				
+				tt2 = (new Date()).getTime();  //debug
+				ptext.innerHTML += '|'+(tt2-tt);  //debug
+				tt = tt2;  //debug
+
+				img[k] = context.getImageData(pos[k][0],pos[k][1],pos[k][2],pos[k][3]/2);
+				// img[k] = context.getImageData(pos[k][0],pos[k][1],pos[k][2],pos[k][3]);
+				pix[k] = img[k].data;
+				
+				checkPauseAudio();  //判断audio是否暂停
+
+				//颜色处理
+				// for(var i=0,n=pix[k].length;i<n;i+=4){
+					// pix[k][i] = 255-pix[k][i]; //红
+					// pix[k][i+1] = 255-pix[k][i+1]; //绿
+					// pix[k][i+2] = 255-pix[k][i+2]; //蓝
+				// }
+				// context.putImageData(img[k],pos[k][0],pos[k][1]);
+
+				tt2 = (new Date()).getTime();  //debug
+				ptext.innerHTML += ','+(tt2-tt);  //debug
+				tt = tt2;  //debug
+				
+				//输出
+				if(!isMobile) textArr[k].innerHTML = '';
+
+				hsv = rgb2hsv(pix[k]);
+				var ph=0,ps=0,pv=0;
+				// var phMin=0,phMax=0,psMin=0,psMax=0,pvMin=0,pv=0;
+
+				for(var i=0;i<3;i++){
+				// for(var i=0;i<6;i++){
+					if(!isMobile) textArr[k].innerHTML += '<br>';
+
+					for (var j=0; j<6; j++){
+						ph =0;
+						ps =0;
+						pv =0;
+						var c=0;
+						for (var ii=0;ii<5;ii+=2){
+							for (var jj=0;jj<5;jj+=2){
+						// for (var ii=0;ii<5;ii++){
+							// for (var jj=0;jj<5;jj++){
+								ph +=hsv[i*30*5+j*5+ii*30+jj][0];
+								ps +=hsv[i*30*5+j*5+ii*30+jj][1];
+								pv +=hsv[i*30*5+j*5+ii*30+jj][2];
+								c++;
+							}
+						}
+						ph =parseInt(ph/c);
+						ps =parseInt(ps/c);
+						pv =parseInt(pv/c);
+						pArr[k]['phcurr'] += ph;
+						pArr[k]['pscurr'] += ps;
+						pArr[k]['pvcurr'] += pv;
+
+						if(!isMobile) textArr[k].innerHTML += ph + '|' + ps + '|' + pv + ' ';
+					}
+				}
+				
+				pArr[k]['phcurr'] = (pArr[k]['phcurr']/36).toFixed(2);
+				pArr[k]['pscurr'] = (pArr[k]['pscurr']/36).toFixed(2);
+				pArr[k]['pvcurr'] = (pArr[k]['pvcurr']/36).toFixed(2);
+				if(Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']) > hMax){
+					playAudio(k);
+					ptext.innerHTML += '<br>' + k + 'H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']).toFixed(2);
+					if(!isMobile) console.log(k + 'H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']).toFixed(2));
+				}else if(Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']) > sMax){
+					playAudio(k);
+					ptext.innerHTML += '<br>' + k + 'S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']).toFixed(2);
+					if(!isMobile) console.log(k + 'S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']).toFixed(2));
+				}else if(Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']) > vMax){
+					playAudio(k);
+					ptext.innerHTML += '<br>' + k + 'V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']).toFixed(2);
+					if(!isMobile) console.log(k + 'V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']).toFixed(2));
+				}
+				
+				tt2 = (new Date()).getTime();  //debug
+				ptext.innerHTML += ','+(tt2-tt);  //debug
+				tt = tt2;  //debug
+				checkPauseAudio();  //判断audio是否暂停
+			}
+
+			ptext.innerHTML += ')';  //debug
+			ptext.innerHTML += audio.currentTime + ' ';
+			
+			setTimeout('snapshot()',1);
+		}
 
 		function gotStream(stream) {
 			video.src = URL.createObjectURL(stream);
@@ -86,10 +224,8 @@
 			video.onloadeddata = function () {
 				console.log("get data");
 			};
-			canvas.width = 640;
-			canvas.height = 480;
-			canvas.style.width = "320px";
-			canvas.style.height = "240px";	  
+			wCanvas.width = 640;
+			wCanvas.height = 480; 
 		}
 
 		function noStream() {
@@ -136,138 +272,46 @@
 			}
 			return hsvArr;
 		}
-		
+
 		// 音频发声
 		function playAudio(k) {
-			if(k==0){
-				if(audio.currentTime > 0.4){
-					audio.stop();
-				}
-				audio.play();
-			}else{
-				if(audio2.currentTime > 0.4){
-					audio2.stop();
-				}
-				audio2.play();
+			var pTime = audioPointTime[k][0];
+			var eTime = audioPointTime[k][1];
+			if((audio.currentTime > eTime + pTime) || (audio.currentTime > pTime + 0.2) || (audio.currentTime < pTime)){
+				audio.currentTime = pTime - 0.02;
+			}
+			audio.play();
+			audioEndTime = pTime + eTime;
+		}
+		
+		function checkPauseAudio() {
+			if (audio.currentTime > audioEndTime) {
+				audio.pause();
 			}
 		}
 		
-		var t = (new Date()).getTime();  //debug
-		
-		var startTime = (new Date()).getTime();
-		var frameRate = 0;
-		
-		function snapshot() {
-			var currTime = (new Date()).getTime();
-			// if(currTime-startTime < 1000)
-			// {
-				// frameRate++;
-				// testOut.innerHTML = frameRate;
-			// }
-			
-			var tt = (new Date()).getTime();  //debug
-			if (ptext.innerHTML.length>400) ptext.innerHTML='';
-			ptext.innerHTML += ' '+(tt-t);  //debug
-			t = tt;  //debug
-			
-			if(!isMobile) turnCanvas(context, canvas.width);// 水平翻转画布
-			context.drawImage(video, 0, 0);
-			if(!isMobile) turnCanvas(context, canvas.width);// 水平翻转画布
-			
-			tt = (new Date()).getTime();  //debug
-			ptext.innerHTML += '('+(tt-t);  //debug
-
-			var pos = [[150, 400], [450, 400]];
-			var img = new Array();
-			var pix = new Array();
-
-			for(var k=0; k<2; k++) {
-				pArr[k]['phlast'] = pArr[k]['phcurr'];
-				pArr[k]['pslast'] = pArr[k]['pscurr'];
-				pArr[k]['pvlast'] = pArr[k]['pvcurr'];
-				pArr[k]['phcurr'] = 0;
-				pArr[k]['pscurr'] = 0;
-				pArr[k]['pvcurr'] = 0;
-
-				img[k] = context.getImageData(pos[k][0],pos[k][1],30,30);
-				pix[k] = img[k].data;
-
-				//颜色处理
-				for(var i=0,n=pix[k].length;i<n;i+=4){
-					pix[k][i] = 255-pix[k][i]; //红
-					pix[k][i+1] = 255-pix[k][i+1]; //绿
-					pix[k][i+2] = 255-pix[k][i+2]; //蓝
-				}
-
-				context.putImageData(img[k],pos[k][0],pos[k][1]);
-
-			tt = (new Date()).getTime();  //debug
-			ptext.innerHTML += ','+(tt-t);  //debug
-				
-				//输出
-				pleft[k].innerHTML = '';
-
-				hsv = rgb2hsv(pix[k]);
-				var ph=0,ps=0,pv=0;	
-
-				for(var i=0;i<6;i++){
-					pleft[k].innerHTML += '<br>';
-
-					for (var j=0; j<6; j++){
-						ph =0;
-						ps =0;
-						pv =0;
-						for (var ii=0;ii<5;ii++){
-							for (var jj=0;jj<5;jj++){
-								ph +=hsv[i*30*5+j*5+ii*30+jj][0];
-								ps +=hsv[i*30*5+j*5+ii*30+jj][1];
-								pv +=hsv[i*30*5+j*5+ii*30+jj][2];
-							}	
-						}
-						ph =parseInt(ph/25);
-						ps =parseInt(ps/25);
-						pv =parseInt(pv/25);
-						pArr[k]['phcurr'] += ph;
-						pArr[k]['pscurr'] += ps;
-						pArr[k]['pvcurr'] += pv;
-
-						pleft[k].innerHTML += ph + '|' + ps + '|' + pv + ' ';
-					}
-				}
-
-				// var rate=0.1;
-				pArr[k]['phcurr'] = (pArr[k]['phcurr']/36).toFixed(2);
-				pArr[k]['pscurr'] = (pArr[k]['pscurr']/36).toFixed(2);
-				pArr[k]['pvcurr'] = (pArr[k]['pvcurr']/36).toFixed(2);
-				if(Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']) > 30){
-					ptext.innerHTML += '<br>H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']);
-					console.log(k + 'H ' + pArr[k]['phcurr'] + '->' + pArr[k]['phlast'] + '->' + Math.abs(pArr[k]['phcurr']-pArr[k]['phlast']));
-					playAudio(k);
-				}else if(Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']) > 12){
-					ptext.innerHTML += '<br>S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']);
-					console.log(k + 'S ' + pArr[k]['pscurr'] + '->' + pArr[k]['pslast'] + '->' + Math.abs(pArr[k]['pscurr']-pArr[k]['pslast']));
-					playAudio(k);
-				}else if(Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']) > 200){
-					ptext.innerHTML += '<br>V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']);
-					console.log(k + 'V ' + pArr[k]['pvcurr'] + '->' + pArr[k]['pvlast'] + '->' + Math.abs(pArr[k]['pvcurr']-pArr[k]['pvlast']));
-					playAudio(k);
-				}
-				
-				
-			tt = (new Date()).getTime();  //debug
-			ptext.innerHTML += ','+(tt-t);  //debug
-				
-			}
-
-			ptext.innerHTML += ')';  //debug
-			setTimeout('snapshot()',1);
-		}
-		
-		HTMLAudioElement.prototype.stop = function() { 
-			this.pause(); 
-			this.currentTime = 0.0; 
+		HTMLAudioElement.prototype.stop = function() {
+			this.pause();
+			this.currentTime = 0.0;
 		} 
 		
-		snapshot();
+		window.onload = function() {
+			for(var k=0; k<cnt; k++){
+				textArr[k] = document.getElementById('text' + k);  //可以直接生成node 在加入textDiv 就没有bug了
+			}
+				
+			setTimeout('snapshot()',2000);
+		}
+		
+		// var times = 0;
+		// function checkEnd() {
+			// if (audio.currentTime > audioEndTime) {
+				// audio.pause();
+			// }
+			// times++;
+			// ptext.innerHTML = audio.currentTime + '|' + audioEndTime + '|' + times;
+			// setTimeout('checkEnd()',100);
+		// }
+		// checkEnd();
 	</script>
 </body>

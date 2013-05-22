@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<head>
+  <style>
+    #video_stream {
+      width: 400px;
+      border: 8px inset silver;
+    }
+	#video_box {
+      text-align: center;
+      margin-top: 50px;
+    }
+	#demo_area {
+	  margin-top: 20px;
+	  text-align: center;
+	}
+  </style>
+</head>
+<body>
+<form action="server.cgi" method="post" enctype="multipart/form-data">
+  <input type="file" name="audio" accept="audio/*" capture>
+  <input type="submit" value="Upload">
+</form>
+<div id="demo_area">
+	<button id="launch_button">打开我的摄像头</button>
+</div>
+<div id="video_box">
+	<video id="video_stream" autoplay></video>
+</div>
+ <script>
+
+    function isChromiumVersionLower() {
+      var ua = navigator.userAgent;
+      var testChromium = ua.match(/AppleWebKit\/.* Chrome\/([\d.]+).* Safari\//);
+      if (!testChromium) 
+		return false;
+
+      var rltArray = testChromium[1].split('.');
+      return ((parseInt(rltArray[0]) < 18) || ((parseInt(rltArray[0]) == 18) && (parseInt(rltArray[1]) == 0) && (parseInt(rltArray[2]) < 966)));
+    }
+
+    function accessLocalWebCam() {
+      try {
+
+      } catch (err) {
+        console.log(err);
+
+      }
+    }
+
+    if (isChromiumVersionLower()) {
+      console.log('内核版本较低，可能无法支持 getUserMedia 接口');
+    } else if (!navigator.getUserMedia) {
+      console.log('不支持 getUserMedia 接口');
+    } else {
+		document.getElementById('launch_button').addEventListener('click', accessLocalWebCam, false);	
+    }
+
+ </script> 
+</body>
